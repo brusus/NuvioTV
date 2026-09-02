@@ -639,6 +639,26 @@ class PluginManager @Inject constructor(
     suspend fun setGroupStreamsByRepository(enabled: Boolean) {
         dataStore.setGroupStreamsByRepository(enabled)
     }
+
+    /**
+     * Read the saved settings (e.g. login credentials) for a single scraper.
+     * These are exposed to the scraper's JS as `globalThis.SCRAPER_SETTINGS`.
+     */
+    suspend fun getScraperSettings(scraperId: String): Map<String, Any> {
+        return dataStore.getScraperSettings(scraperId)
+    }
+
+    /**
+     * Merge the given key/value pairs into a scraper's saved settings, keeping
+     * any existing keys not present in [updates].
+     */
+    suspend fun updateScraperSettings(scraperId: String, updates: Map<String, String>) {
+        val current = dataStore.getScraperSettings(scraperId).toMutableMap()
+        updates.forEach { (key, value) ->
+            if (value.isBlank()) current.remove(key) else current[key] = value
+        }
+        dataStore.setScraperSettings(scraperId, current)
+    }
     
     /**
      * Execute all enabled scrapers for a given media

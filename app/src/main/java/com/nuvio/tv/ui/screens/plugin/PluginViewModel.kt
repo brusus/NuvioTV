@@ -103,6 +103,70 @@ class PluginViewModel @Inject constructor(
             PluginUiEvent.RejectPendingRepoChange -> rejectPendingRepoChange()
             PluginUiEvent.ConfirmPendingScraperEnable -> confirmPendingScraperEnable()
             PluginUiEvent.DismissPendingScraperEnable -> dismissPendingScraperEnable()
+            is PluginUiEvent.OpenScraperLogin -> openScraperLogin(event.scraperId)
+            PluginUiEvent.DismissScraperLogin -> dismissScraperLogin()
+            is PluginUiEvent.UpdateScraperLoginFields -> updateScraperLoginFields(event.email, event.password)
+            PluginUiEvent.SaveScraperLogin -> saveScraperLogin()
+            PluginUiEvent.ClearScraperLogin -> clearScraperLogin()
+        }
+    }
+
+    private fun openScraperLogin(scraperId: String) {
+        val scraper = _uiState.value.scrapers.firstOrNull { it.id == scraperId } ?: return
+        viewModelScope.launch {
+            val settings = pluginManager.getScraperSettings(scraperId)
+            _uiState.update {
+                it.copy(
+                    scraperLogin = ScraperLoginInfo(
+                        scraperId = scraperId,
+                        scraperName = scraper.name,
+                        email = (settings["email"] as? String).orEmpty(),
+                        password = (settings["password"] as? String).orEmpty()
+                    )
+                )
+            }
+        }
+    }
+
+    private fun dismissScraperLogin() {
+        _uiState.update { it.copy(scraperLogin = null) }
+    }
+
+    private fun updateScraperLoginFields(email: String, password: String) {
+        val current = _uiState.value.scraperLogin ?: return
+        _uiState.update { it.copy(scraperLogin = current.copy(email = email, password = password)) }
+    }
+
+    private fun saveScraperLogin() {
+        val login = _uiState.value.scraperLogin ?: return
+        _uiState.update { it.copy(scraperLogin = login.copy(isSaving = true)) }
+        viewModelScope.launch {
+            pluginManager.updateScraperSettings(
+                login.scraperId,
+                mapOf("email" to login.email.trim(), "password" to login.password)
+            )
+            _uiState.update {
+                it.copy(
+                    scraperLogin = null,
+                    successMessage = context.getString(R.string.plugin_login_saved, login.scraperName)
+                )
+            }
+        }
+    }
+
+    private fun clearScraperLogin() {
+        val login = _uiState.value.scraperLogin ?: return
+        viewModelScope.launch {
+            pluginManager.updateScraperSettings(
+                login.scraperId,
+                mapOf("email" to "", "password" to "")
+            )
+            _uiState.update {
+                it.copy(
+                    scraperLogin = null,
+                    successMessage = context.getString(R.string.plugin_login_cleared, login.scraperName)
+                )
+            }
         }
     }
 

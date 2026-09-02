@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCode2
@@ -68,6 +69,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -261,6 +264,7 @@ fun PluginScreenContent(
                             viewModel.onEvent(PluginUiEvent.ToggleScraper(scraper.id, enabled))
                         },
                         onTest = { viewModel.onEvent(PluginUiEvent.TestScraper(scraper.id)) },
+                        onLogin = { viewModel.onEvent(PluginUiEvent.OpenScraperLogin(scraper.id)) },
                         isTesting = uiState.isTesting && uiState.testScraperId == scraper.id,
                         testResults = if (uiState.testScraperId == scraper.id) uiState.testResults else null,
                         testDiagnostics = if (uiState.testScraperId == scraper.id) uiState.testDiagnostics else null,
@@ -308,6 +312,22 @@ fun PluginScreenContent(
                     scraperName = pending.scraperName,
                     onConfirm = { viewModel.onEvent(PluginUiEvent.ConfirmPendingScraperEnable) },
                     onDismiss = { viewModel.onEvent(PluginUiEvent.DismissPendingScraperEnable) }
+                )
+            }
+        }
+    }
+
+    if (uiState.scraperLogin != null) {
+        Popup(properties = PopupProperties(focusable = true)) {
+            uiState.scraperLogin?.let { login ->
+                ScraperLoginDialog(
+                    login = login,
+                    onFieldsChange = { email, password ->
+                        viewModel.onEvent(PluginUiEvent.UpdateScraperLoginFields(email, password))
+                    },
+                    onSave = { viewModel.onEvent(PluginUiEvent.SaveScraperLogin) },
+                    onClear = { viewModel.onEvent(PluginUiEvent.ClearScraperLogin) },
+                    onDismiss = { viewModel.onEvent(PluginUiEvent.DismissScraperLogin) }
                 )
             }
         }
@@ -1048,6 +1068,208 @@ private fun ConfirmScraperEnableDialog(
 }
 
 @Composable
+private fun ScraperLoginDialog(
+    login: ScraperLoginInfo,
+    onFieldsChange: (email: String, password: String) -> Unit,
+    onSave: () -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val saveFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        saveFocusRequester.requestFocus()
+    }
+
+    BackHandler { onDismiss() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.8f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            onClick = { },
+            modifier = Modifier.width(560.dp),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = NuvioTheme.colors.SurfaceVariant
+            ),
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(NuvioTheme.radii.xl))
+        ) {
+            Column(modifier = Modifier.padding(NuvioTheme.spacing.xl)) {
+                Text(
+                    text = stringResource(R.string.plugin_login_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = NuvioTheme.colors.TextPrimary
+                )
+
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+
+                Text(
+                    text = stringResource(R.string.plugin_login_subtitle, login.scraperName),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = NuvioTheme.colors.TextSecondary
+                )
+
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.xl))
+
+                LoginTextField(
+                    value = login.email,
+                    onValueChange = { onFieldsChange(it, login.password) },
+                    label = stringResource(R.string.plugin_login_email_label),
+                    keyboardType = KeyboardType.Email,
+                    isPassword = false
+                )
+
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+
+                LoginTextField(
+                    value = login.password,
+                    onValueChange = { onFieldsChange(login.email, it) },
+                    label = stringResource(R.string.plugin_login_password_label),
+                    keyboardType = KeyboardType.Password,
+                    isPassword = true
+                )
+
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.xl))
+
+                if (login.isSaving) {
+                    LoadingIndicator(modifier = Modifier.size(36.dp))
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.lg)) {
+                        Surface(
+                            onClick = onClear,
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = NuvioTheme.colors.Surface,
+                                focusedContainerColor = NuvioTheme.colors.FocusBackground
+                            ),
+                            border = ClickableSurfaceDefaults.border(
+                                focusedBorder = Border(
+                                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                                    shape = RoundedCornerShape(50)
+                                )
+                            ),
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50))
+                        ) {
+                            Text(
+                                text = stringResource(R.string.plugin_login_clear),
+                                modifier = Modifier.padding(horizontal = NuvioTheme.spacing.xl, vertical = NuvioTheme.spacing.md),
+                                color = NuvioTheme.colors.TextPrimary
+                            )
+                        }
+
+                        Surface(
+                            onClick = onDismiss,
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = NuvioTheme.colors.Surface,
+                                focusedContainerColor = NuvioTheme.colors.FocusBackground
+                            ),
+                            border = ClickableSurfaceDefaults.border(
+                                focusedBorder = Border(
+                                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                                    shape = RoundedCornerShape(50)
+                                )
+                            ),
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50))
+                        ) {
+                            Text(
+                                text = stringResource(R.string.plugin_login_cancel),
+                                modifier = Modifier.padding(horizontal = NuvioTheme.spacing.xl, vertical = NuvioTheme.spacing.md),
+                                color = NuvioTheme.colors.TextPrimary
+                            )
+                        }
+
+                        Surface(
+                            onClick = onSave,
+                            modifier = Modifier.focusRequester(saveFocusRequester),
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = NuvioTheme.colors.Secondary,
+                                focusedContainerColor = NuvioTheme.colors.SecondaryVariant
+                            ),
+                            border = ClickableSurfaceDefaults.border(
+                                focusedBorder = Border(
+                                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                                    shape = RoundedCornerShape(50)
+                                )
+                            ),
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50))
+                        ) {
+                            Text(
+                                text = stringResource(R.string.plugin_login_save),
+                                modifier = Modifier.padding(horizontal = NuvioTheme.spacing.xl, vertical = NuvioTheme.spacing.md),
+                                color = NuvioTheme.colors.OnSecondary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoginTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    keyboardType: KeyboardType,
+    isPassword: Boolean
+) {
+    var isFocused by remember { mutableStateOf(false) }
+
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = NuvioTheme.colors.TextSecondary
+        )
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
+        Surface(
+            onClick = { },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { isFocused = it.isFocused },
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = NuvioTheme.colors.BackgroundElevated,
+                focusedContainerColor = NuvioTheme.colors.BackgroundElevated
+            ),
+            border = ClickableSurfaceDefaults.border(
+                border = Border(
+                    border = BorderStroke(NuvioTheme.spacing.hairline, NuvioTheme.colors.Border),
+                    shape = RoundedCornerShape(NuvioTheme.radii.md)
+                ),
+                focusedBorder = Border(
+                    border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                    shape = RoundedCornerShape(NuvioTheme.radii.md)
+                )
+            ),
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f)
+        ) {
+            Box(modifier = Modifier.padding(NuvioTheme.spacing.md)) {
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = keyboardType,
+                        imeAction = ImeAction.Next,
+                        autoCorrectEnabled = false
+                    ),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = NuvioTheme.colors.TextPrimary
+                    ),
+                    cursorBrush = SolidColor(if (isFocused) NuvioTheme.colors.Primary else Color.Transparent)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun RepositoryCard(
     repository: PluginRepository,
     repoScrapers: List<ScraperInfo>,
@@ -1204,6 +1426,7 @@ private fun ScraperCard(
     scraper: ScraperInfo,
     onToggle: (Boolean) -> Unit,
     onTest: () -> Unit,
+    onLogin: () -> Unit,
     isTesting: Boolean,
     testResults: List<LocalScraperResult>?,
     testDiagnostics: com.nuvio.tv.core.plugin.TestDiagnostics? = null,
@@ -1211,8 +1434,9 @@ private fun ScraperCard(
 ) {
     var showResults by remember { mutableStateOf(false) }
     var isTestFocused by remember { mutableStateOf(false) }
+    var isLoginFocused by remember { mutableStateOf(false) }
     var isToggleFocused by remember { mutableStateOf(false) }
-    val isCardFocused = isTestFocused || isToggleFocused
+    val isCardFocused = isTestFocused || isLoginFocused || isToggleFocused
     val cardBorderColor by animateColorAsState(
         targetValue = if (isCardFocused) NuvioTheme.colors.FocusRing else Color.Transparent,
         label = "scraperCardBorder"
@@ -1308,6 +1532,29 @@ private fun ScraperCard(
                         }
                         Spacer(modifier = Modifier.width(NuvioTheme.spacing.xs))
                         Text(stringResource(R.string.plugin_test_btn))
+                    }
+
+                    // Login button (per-provider credentials, e.g. premium account)
+                    if (!isReadOnly) {
+                        Button(
+                            onClick = onLogin,
+                            modifier = Modifier.onFocusChanged { isLoginFocused = it.isFocused },
+                            colors = ButtonDefaults.colors(
+                                containerColor = NuvioTheme.colors.Surface,
+                                contentColor = NuvioTheme.colors.TextPrimary,
+                                focusedContainerColor = NuvioTheme.colors.FocusBackground,
+                                focusedContentColor = NuvioTheme.colors.Primary
+                            ),
+                            shape = ButtonDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = stringResource(R.string.cd_login),
+                                modifier = Modifier.size(NuvioTheme.spacing.lg)
+                            )
+                            Spacer(modifier = Modifier.width(NuvioTheme.spacing.xs))
+                            Text(stringResource(R.string.plugin_login_btn))
+                        }
                     }
 
                     // Enable toggle

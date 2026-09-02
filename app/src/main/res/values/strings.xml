@@ -2157,6 +2157,17 @@
     <string name="plugin_error_refresh">Failed to refresh: %1$s</string>
     <string name="plugin_error_test">Test failed: %1$s</string>
     <string name="plugin_test_no_results">No results found</string>
+    <string name="plugin_login_btn">Login</string>
+    <string name="cd_login">Provider login</string>
+    <string name="plugin_login_title">Provider login</string>
+    <string name="plugin_login_subtitle">%1$s may unlock premium quality (e.g. 1080p) with your own account on that site. Credentials are stored only on this device and sent only to the provider\'s own site.</string>
+    <string name="plugin_login_email_label">Email or username</string>
+    <string name="plugin_login_password_label">Password</string>
+    <string name="plugin_login_save">Save</string>
+    <string name="plugin_login_clear">Clear</string>
+    <string name="plugin_login_cancel">Cancel</string>
+    <string name="plugin_login_saved">Login saved for %1$s</string>
+    <string name="plugin_login_cleared">Login cleared for %1$s</string>
     <string name="plugin_test_found_streams">Found %1$d streams</string>
     <string name="plugin_version">Version %1$s</string>
 

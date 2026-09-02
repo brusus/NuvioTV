@@ -48,6 +48,10 @@ class PluginManager {
 
     suspend fun setGroupStreamsByRepository(enabled: Boolean) = Unit
 
+    suspend fun getScraperSettings(scraperId: String): Map<String, Any> = emptyMap()
+
+    suspend fun updateScraperSettings(scraperId: String, updates: Map<String, String>) = Unit
+
     suspend fun executeScrapers(
         tmdbId: String,
         mediaType: String,
