@@ -1216,7 +1216,20 @@ private fun LoginTextField(
     keyboardType: KeyboardType,
     isPassword: Boolean
 ) {
-    var isFocused by remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val textFieldFocusRequester = remember { FocusRequester() }
+    var isEditing by remember { mutableStateOf(false) }
+
+    // Mirrors AddRepositoryInline: a D-pad "select" on the Surface enters edit
+    // mode, which is what actually focuses the BasicTextField and raises the
+    // keyboard. Without this, a remote-only TV user (no touchscreen) can never
+    // open the keyboard for this field.
+    LaunchedEffect(isEditing) {
+        if (isEditing) {
+            textFieldFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     Column {
         Text(
@@ -1226,10 +1239,8 @@ private fun LoginTextField(
         )
         Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
         Surface(
-            onClick = { },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { isFocused = it.isFocused },
+            onClick = { isEditing = true },
+            modifier = Modifier.fillMaxWidth(),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = NuvioTheme.colors.BackgroundElevated,
                 focusedContainerColor = NuvioTheme.colors.BackgroundElevated
@@ -1251,7 +1262,15 @@ private fun LoginTextField(
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(textFieldFocusRequester)
+                        .onFocusChanged {
+                            if (!it.isFocused && isEditing) {
+                                isEditing = false
+                                keyboardController?.hide()
+                            }
+                        },
                     singleLine = true,
                     visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
                     keyboardOptions = KeyboardOptions(
@@ -1262,7 +1281,7 @@ private fun LoginTextField(
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = NuvioTheme.colors.TextPrimary
                     ),
-                    cursorBrush = SolidColor(if (isFocused) NuvioTheme.colors.Primary else Color.Transparent)
+                    cursorBrush = SolidColor(if (isEditing) NuvioTheme.colors.Primary else Color.Transparent)
                 )
             }
         }
