@@ -587,11 +587,17 @@ class PluginRuntime @Inject constructor() {
                     val charset = bodyContentType?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
                     val responseBody = decodeBodyToSafeString(decodedRead.bytes, charset)
                     val responseHeaders = httpResponse.headers.toPluginResponseHeaders()
+                    // Multiple Set-Cookie headers can't be safely comma-joined (cookie
+                    // attributes like `expires` contain commas themselves), so the merged
+                    // value in responseHeaders["set-cookie"] is lossy/ambiguous. Pass the
+                    // individual values through separately for headers.getSetCookie().
+                    val setCookieList = httpResponse.headers("Set-Cookie")
 
                     val result = mapOf(
                         "ok" to httpResponse.isSuccessful,
                         "status" to httpResponse.code,
                         "statusText" to httpResponse.message,
+                        "setCookieList" to setCookieList,
                         "url" to httpResponse.request.url.toString(),
                         "body" to responseBody,
                         "headers" to responseHeaders,
@@ -728,6 +734,9 @@ class PluginRuntime @Inject constructor() {
                     headers: {
                         get: function(name) {
                             return parsed.headers[name.toLowerCase()] || null;
+                        },
+                        getSetCookie: function() {
+                            return parsed.setCookieList || [];
                         }
                     },
                     text: function() {
