@@ -33,7 +33,6 @@ import com.nuvio.tv.data.repository.LibraryRepositoryImpl
 import com.nuvio.tv.data.repository.WatchProgressRepositoryImpl
 import com.nuvio.tv.domain.model.AuthState
 import com.nuvio.tv.domain.model.ServerConfiguration
-import com.nuvio.tv.domain.repository.SyncRepository
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -62,7 +61,6 @@ private val qrLoginTraceCounter = AtomicLong(0L)
 @HiltViewModel
 class AccountViewModel @Inject constructor(
     private val authManager: AuthManager,
-    private val syncRepository: SyncRepository,
     private val pluginSyncService: PluginSyncService,
     private val addonSyncService: AddonSyncService,
     private val watchProgressSyncService: WatchProgressSyncService,
@@ -171,68 +169,6 @@ class AccountViewModel @Inject constructor(
         }
     }
 
-    fun generateSyncCode(pin: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            if (!authManager.isAuthenticated) {
-                _uiState.update { it.copy(isLoading = false, error = context.getString(R.string.account_error_signin_required)) }
-                return@launch
-            }
-            pushLocalDataToRemote()
-            syncRepository.generateSyncCode(pin).fold(
-                onSuccess = { code ->
-                    _uiState.update { it.copy(isLoading = false, generatedSyncCode = code) }
-                },
-                onFailure = { e ->
-                    _uiState.update { it.copy(isLoading = false, error = userFriendlyError(e)) }
-                }
-            )
-        }
-    }
-
-    fun getSyncCode(pin: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            syncRepository.getSyncCode(pin).fold(
-                onSuccess = { code ->
-                    _uiState.update { it.copy(isLoading = false, generatedSyncCode = code) }
-                },
-                onFailure = { e ->
-                    _uiState.update { it.copy(isLoading = false, error = userFriendlyError(e)) }
-                }
-            )
-        }
-    }
-
-    fun claimSyncCode(code: String, pin: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            if (!authManager.isAuthenticated) {
-                _uiState.update { it.copy(isLoading = false, error = context.getString(R.string.account_error_signin_required)) }
-                return@launch
-            }
-            syncRepository.claimSyncCode(code, pin, Build.MODEL).fold(
-                onSuccess = { result ->
-                    if (result.success) {
-                        authManager.clearEffectiveUserIdCache()
-                        pullRemoteData().onFailure { e ->
-                            Log.e("AccountViewModel", "claimSyncCode: pullRemoteData failed, continuing", e)
-                        }
-                        updateEffectiveOwnerId(_uiState.value.authState)
-                        _uiState.update { it.copy(isLoading = false, syncClaimSuccess = true) }
-                    } else {
-                        authManager.signOut(explicit = false)
-                        _uiState.update { it.copy(isLoading = false, error = result.message) }
-                    }
-                },
-                onFailure = { e ->
-                    authManager.signOut(explicit = false)
-                    _uiState.update { it.copy(isLoading = false, error = userFriendlyError(e)) }
-                }
-            )
-        }
-    }
-
     fun signOut() {
         viewModelScope.launch {
             authManager.signOut()
@@ -240,34 +176,8 @@ class AccountViewModel @Inject constructor(
         }
     }
 
-    fun loadLinkedDevices() {
-        viewModelScope.launch {
-            syncRepository.getLinkedDevices().fold(
-                onSuccess = { devices ->
-                    _uiState.update { it.copy(linkedDevices = devices) }
-                },
-                onFailure = { /* silently handle */ }
-            )
-        }
-    }
-
-    fun unlinkDevice(deviceUserId: String) {
-        viewModelScope.launch {
-            syncRepository.unlinkDevice(deviceUserId)
-            loadLinkedDevices()
-        }
-    }
-
     fun clearError() {
         _uiState.update { it.copy(error = null) }
-    }
-
-    fun clearSyncClaimSuccess() {
-        _uiState.update { it.copy(syncClaimSuccess = false) }
-    }
-
-    fun clearGeneratedSyncCode() {
-        _uiState.update { it.copy(generatedSyncCode = null) }
     }
 
     fun startQrLogin() {

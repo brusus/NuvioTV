@@ -38,27 +38,6 @@ data class SupabaseAddon(
 )
 
 @Serializable
-data class SyncCodeResult(
-    val code: String
-)
-
-@Serializable
-data class ClaimSyncResult(
-    @SerialName("result_owner_id") val ownerId: String? = null,
-    val success: Boolean,
-    val message: String
-)
-
-@Serializable
-data class SupabaseLinkedDevice(
-    val id: String? = null,
-    @SerialName("owner_id") val ownerId: String,
-    @SerialName("device_user_id") val deviceUserId: String,
-    @SerialName("device_name") val deviceName: String? = null,
-    @SerialName("linked_at") val linkedAt: String? = null
-)
-
-@Serializable
 data class TvLoginStartResult(
     val code: String,
     @SerialName("web_url") val webUrl: String,

@@ -1,12 +1,9 @@
 package com.nuvio.tv.domain.repository
 
-import com.nuvio.tv.data.remote.supabase.ClaimSyncResult
-import com.nuvio.tv.data.remote.supabase.SupabaseLinkedDevice
-
-interface SyncRepository {
-    suspend fun generateSyncCode(pin: String): Result<String>
-    suspend fun getSyncCode(pin: String): Result<String>
-    suspend fun claimSyncCode(code: String, pin: String, deviceName: String?): Result<ClaimSyncResult>
-    suspend fun unlinkDevice(deviceUserId: String): Result<Unit>
-    suspend fun getLinkedDevices(): Result<List<SupabaseLinkedDevice>>
-}
+// Emptied: dead code. Every method (generateSyncCode/getSyncCode/claimSyncCode/
+// unlinkDevice/getLinkedDevices) was reachable only from the manual sync-code
+// pairing UI (AccountScreen/SyncCodeGenerateScreen/SyncCodeClaimScreen), which
+// was itself dead - superseded by QR sign-in. Left as an empty file rather
+// than deleted for this session, per environment restrictions on file
+// deletion; safe to delete outright in a normal editor (along with
+// data/repository/SyncRepositoryImpl.kt and its RepositoryModule.kt binding).
