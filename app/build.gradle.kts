@@ -153,6 +153,11 @@ android {
     productFlavors {
         create("full") {
             dimension = "distribution"
+            // Own applicationId so release builds of this fork never collide
+            // with the official com.nuvio.tv (Play Store / GitHub releases) -
+            // both can be installed side by side, and our updates never try
+            // to overwrite an install signed with a different key.
+            applicationId = "com.nuvio.tv.brusus"
             buildConfigField("boolean", "FEATURE_PLUGINS_ENABLED", "true")
             buildConfigField("boolean", "FEATURE_IN_APP_UPDATES_ENABLED", "true")
             buildConfigField("boolean", "FEATURE_IN_APP_TRAILERS_ENABLED", "true")
