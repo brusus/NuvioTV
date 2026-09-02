@@ -187,12 +187,13 @@ jobs:
           set_property NUVIO_RELEASE_KEY_PASSWORD "${RELEASE_KEY_PASSWORD}"
           set_property NUVIO_RELEASE_STORE_PASSWORD "${RELEASE_STORE_PASSWORD}"
 
+          # Trakt sync is optional at runtime (TraktAuthService.hasRequiredCredentials()
+          # gates the feature off when the keys are blank), so it isn't required here -
+          # this fork doesn't have its own Trakt API app.
           required_properties=(
             NUVIO_RELEASE_STORE_PASSWORD
             NUVIO_RELEASE_KEY_ALIAS
             NUVIO_RELEASE_KEY_PASSWORD
-            TRAKT_CLIENT_ID
-            TRAKT_CLIENT_SECRET
           )
           for property_name in "${required_properties[@]}"; do
             if ! grep -Eq "^[[:space:]]*${property_name}[[:space:]]*=[[:space:]]*.+$" local.properties; then
