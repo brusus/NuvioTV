@@ -2710,6 +2710,7 @@
     <string name="autoplay_regex_preset_hdr_dolby_vision">HDR / Dolby Vision</string>
     <string name="autoplay_regex_preset_dolby_atmos_dts">Dolby Atmos / DTS</string>
     <string name="autoplay_regex_preset_english">English</string>
+    <string name="autoplay_regex_preset_italian">Italian</string>
     <string name="autoplay_regex_preset_no_cam_ts">No CAM/TS</string>
     <string name="autoplay_regex_preset_no_remux_hdr">No REMUX/HDR</string>
 

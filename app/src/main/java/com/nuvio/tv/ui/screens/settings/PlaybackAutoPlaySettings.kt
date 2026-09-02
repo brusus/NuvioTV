@@ -805,12 +805,13 @@ private fun StreamRegexDialog(
     val presetHdrDv = stringResource(R.string.autoplay_regex_preset_hdr_dolby_vision)
     val presetDolbyAtmosDts = stringResource(R.string.autoplay_regex_preset_dolby_atmos_dts)
     val presetEnglish = stringResource(R.string.autoplay_regex_preset_english)
+    val presetItalian = stringResource(R.string.autoplay_regex_preset_italian)
     val presetNoCamTs = stringResource(R.string.autoplay_regex_preset_no_cam_ts)
     val presetNoRemuxHdr = stringResource(R.string.autoplay_regex_preset_no_remux_hdr)
     val presets = remember(
         presetAny1080p, preset4kRemux, preset1080pStandard, preset720pSmaller,
         presetWebSources, presetBlurayQuality, presetHevcX265, presetAvcX264,
-        presetHdrDv, presetDolbyAtmosDts, presetEnglish, presetNoCamTs, presetNoRemuxHdr
+        presetHdrDv, presetDolbyAtmosDts, presetEnglish, presetItalian, presetNoCamTs, presetNoRemuxHdr
     ) {
         listOf(
             presetAny1080p to "(2160p|4k|1080p)",
@@ -824,6 +825,7 @@ private fun StreamRegexDialog(
             presetHdrDv to "(hdr|hdr10\\+?|dv|dolby\\s*vision)",
             presetDolbyAtmosDts to "(atmos|truehd|dts[-\\s]?hd|dtsx?)",
             presetEnglish to "(\\beng\\b|english)",
+            presetItalian to "(\\bita\\b|italian|italiano)",
             presetNoCamTs to "^(?!.*\\b(cam|hdcam|ts|telesync)\\b).*$",
             presetNoRemuxHdr to "(?is)^(?!.*\\b(hdr|hdr10|dv|dolby|vision|hevc|remux|2160p)\\b).+$"
         )
