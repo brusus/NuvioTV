@@ -8,14 +8,16 @@ import com.nuvio.tv.domain.model.TmdbCollectionMediaType
 import com.nuvio.tv.domain.model.TmdbCollectionSource
 import com.nuvio.tv.domain.model.TmdbCollectionSourceType
 import com.nuvio.tv.domain.model.TraktCollectionSource
+import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CollectionsDataStoreSourceMigrationTest {
+    private val mockContext = mockk<Context>(relaxed = true)
     private val store = CollectionsDataStore(
-        appContext = mockk<Context>(relaxed = true),
+        appContext = mockContext,
         factory = mockk<ProfileDataStoreFactory>(relaxed = true),
         profileManager = mockk<ProfileManager>(relaxed = true)
     )
@@ -133,6 +135,16 @@ class CollectionsDataStoreSourceMigrationTest {
 
     @Test
     fun `validation rejects trakt sources without list id`() {
+        // The mock Context has no real resources loaded, so a relaxed getString()
+        // would return a placeholder that can never contain this text - stub the
+        // specific resource so the assertion actually exercises which error fired.
+        every {
+            mockContext.getString(
+                com.nuvio.tv.R.string.collections_import_error_missing_trakt_list_id,
+                any<String>(), any<String>(), any<Int>()
+            )
+        } returns "missing Trakt list ID"
+
         val json = """
             [
               {

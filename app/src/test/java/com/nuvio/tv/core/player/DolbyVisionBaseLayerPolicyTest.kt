@@ -206,10 +206,14 @@ class DolbyVisionBaseLayerPolicyTest {
         assertEquals(Decision.STRIP_TO_HDR10, r.decision)
     }
 
-    // ── NATIVE_DV7 catch-all: non-Amazon non-Xiaomi devices on DV display ──
+    // ── CONVERT_TO_DV81: the manufacturer gate on the general DV-display + Profile-8
+    // decoder path was removed (see DolbyVisionBaseLayerPolicy's resolveFromCapabilities
+    // doc comment) once app-level DV7->DV8.1 conversion was confirmed to produce real DV
+    // on non-Amazon hardware too (Chromecast, LG panels). Any device with a DV display,
+    // a ready bridge, and a Profile-8 decoder converts, regardless of manufacturer. ──
 
     @Test
-    fun `non-Amazon device on DV display with DV81 decoder falls through to NATIVE_DV7`() {
+    fun `non-Amazon device on DV display with DV81 decoder converts to DV81`() {
         val r = resolve(
             displayDv = true,
             displayHdr10 = true,
@@ -219,13 +223,13 @@ class DolbyVisionBaseLayerPolicyTest {
             isXiaomi = false,
             bridgeReady = true
         )
-        assertEquals(Decision.NATIVE_DV7, r.decision)
-        assertFalse(r.divertsFromNativeDv7)
+        assertEquals(Decision.CONVERT_TO_DV81, r.decision)
+        assertTrue(r.divertsFromNativeDv7)
         assertFalse(r.mapToHevc)
     }
 
     @Test
-    fun `Samsung device on DV display still falls through to NATIVE_DV7`() {
+    fun `Samsung device on DV display with DV81 decoder converts to DV81`() {
         val r = resolve(
             displayDv = true,
             displayHdr10 = true,
@@ -233,7 +237,7 @@ class DolbyVisionBaseLayerPolicyTest {
             isSamsung = true,
             bridgeReady = true
         )
-        assertEquals(Decision.NATIVE_DV7, r.decision)
+        assertEquals(Decision.CONVERT_TO_DV81, r.decision)
     }
 
     // ── CONVERT_TO_DV81: HDR10 fallback (Samsung + Amazon) ──

@@ -197,7 +197,10 @@ class MatroskaAfrProbeTest {
             assertEquals(patchedLength, file.length())
 
             val patched = file.readBytes()
-            val stub = MatroskaAfrProbe.buildElement(MatroskaAfrProbe.ID_CLUSTER, ByteArray(0))
+            // The stub Cluster now carries a Timecode + timed SimpleBlocks (see
+            // buildMinimalStubCluster's doc comment) rather than an empty payload -
+            // NextLib/FFmpeg need block timing metadata, not just the Cluster wrapper.
+            val stub = MatroskaAfrProbe.buildMinimalStubCluster()
             assertArrayEquals(stub, patched.copyOfRange(patched.size - stub.size, patched.size))
 
             // The rewritten Segment must end exactly at EOF instead of the original remote length.

@@ -124,9 +124,15 @@ internal fun SimklApiResponse.toHistoryMutationReceipt(
     return SimklMutationReceipt(
         result = result,
         mutation = SimklCommittedMutation.AddToHistory(accepted),
+        // A resolved, episode-specific mutation (the common "mark this episode watched"
+        // case) doesn't need reconciliation - we already know exactly what changed. A
+        // whole-show/movie-less-episode request is ambiguous: Simkl expands it into
+        // however many episodes it decides to mark, which we can't reconstruct locally,
+        // so those always reconcile.
         requiresReconciliation = accepted.any { resolved ->
             resolved.status == null ||
-                resolved.request.media.kind != TrackingMediaKind.MOVIE
+                (resolved.request.media.kind != TrackingMediaKind.MOVIE &&
+                    resolved.request.media.episode == null)
         }
     )
 }

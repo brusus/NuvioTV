@@ -46,7 +46,11 @@ class PostPlayRecommendationStateTest {
     }
 
     @Test
-    fun `loaded recommendation holds natural completion until overlay evaluation`() {
+    fun `loaded but not yet visible recommendation does not block natural completion`() {
+        // Regression test for playback getting stuck on the last frame: merely having
+        // prefetched a recommendation used to block completion forever, even once the
+        // overlay was dismissed and the player returned to. Only an actually-visible
+        // overlay (or one still loading, before the player has been returned to) blocks.
         val recommendation = PostPlayRecommendation(
             id = "tmdb:1",
             contentType = "movie",
@@ -61,7 +65,11 @@ class PostPlayRecommendationStateTest {
             runtime = null
         )
 
-        assertTrue(PostPlayRecommendationUiState(recommendation = recommendation).blocksNaturalCompletion)
+        assertFalse(PostPlayRecommendationUiState(recommendation = recommendation).blocksNaturalCompletion)
+        assertTrue(
+            PostPlayRecommendationUiState(recommendation = recommendation, isVisible = true)
+                .blocksNaturalCompletion
+        )
     }
 
     @Test
@@ -85,7 +93,9 @@ class PostPlayRecommendationStateTest {
         assertFalse(state.copy(isVisible = false).canReturnToPlayer)
         assertFalse(returned.isVisible)
         assertTrue(returned.hasReturnedToPlayer)
-        assertTrue(returned.blocksNaturalCompletion)
+        // Once the player has actually been returned to, natural completion must be able
+        // to fire again - this is what "stuck on last frame" was.
+        assertFalse(returned.blocksNaturalCompletion)
     }
 
     @Test
