@@ -166,7 +166,11 @@ jobs:
         if: inputs.mode != 'dry-run'
         run: |
           keystore_path="${RUNNER_TEMP}/nuviotv-release.jks"
-          printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
+          # Strip whitespace/newlines that copy-pasting a secret's value into the
+          # GitHub UI can pick up (e.g. a trailing newline from a source .txt file) -
+          # a stray character there makes the keystore password mismatch with a
+          # BadPaddingException rather than a clear "wrong password" message.
+          printf '%s' "${RELEASE_KEYSTORE_BASE64}" | tr -d '[:space:]' | base64 --decode > "${keystore_path}"
           printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties
 
           if [[ -n "${LOCAL_DEV_PROPERTIES_BASE64}" ]]; then
@@ -175,7 +179,8 @@ jobs:
 
           set_property() {
             local property_name="$1"
-            local property_value="$2"
+            local property_value
+            property_value="$(printf '%s' "$2" | tr -d '\r\n')"
             [[ -n "${property_value}" ]] || return 0
             sed -i -E "/^[[:space:]]*${property_name}[[:space:]]*=/d" local.properties
             printf '\n%s=%s\n' "${property_name}" "${property_value}" >> local.properties
