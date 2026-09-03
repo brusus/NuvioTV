@@ -95,6 +95,9 @@ jobs:
             required_secrets=(
               LOCAL_PROPERTIES_BASE64
               RELEASE_KEYSTORE_BASE64
+              RELEASE_KEY_ALIAS
+              RELEASE_KEY_PASSWORD
+              RELEASE_STORE_PASSWORD
             )
             missing=()
             for secret_name in "${required_secrets[@]}"; do
