@@ -29,7 +29,12 @@ jobs:
     name: ${{ inputs.mode }} Android TV release
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
+      # The default github.token (governed by repo Settings > Actions > General >
+      # Workflow permissions) kept returning "HTTP 403: Resource not accessible by
+      # integration" on `gh release create` even after switching that setting to
+      # read-and-write - falls back to it if RELEASE_PAT isn't set, but a PAT with
+      # Contents: Read and write scoped to this repo sidesteps that ambiguity entirely.
+      GH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}
       LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 }}
       LOCAL_DEV_PROPERTIES_BASE64: ${{ secrets.LOCAL_DEV_PROPERTIES_BASE64 }}
       RELEASE_KEYSTORE_BASE64: ${{ secrets.NUVIO_RELEASE_KEYSTORE_BASE64 }}
