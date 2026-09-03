@@ -192,6 +192,25 @@ jobs:
           set_property NUVIO_RELEASE_KEY_PASSWORD "${RELEASE_KEY_PASSWORD}"
           set_property NUVIO_RELEASE_STORE_PASSWORD "${RELEASE_STORE_PASSWORD}"
 
+      - name: Debug signing secrets (no secret values are printed)
+        if: inputs.mode != 'dry-run'
+        run: |
+          keystore_path="${RUNNER_TEMP}/nuviotv-release.jks"
+          alias="$(sed -nE 's/^NUVIO_RELEASE_KEY_ALIAS=(.*)$/\1/p' local.properties)"
+          storepass="$(sed -nE 's/^NUVIO_RELEASE_STORE_PASSWORD=(.*)$/\1/p' local.properties)"
+          keypass="$(sed -nE 's/^NUVIO_RELEASE_KEY_PASSWORD=(.*)$/\1/p' local.properties)"
+          echo "keystore sha256: $(sha256sum "${keystore_path}" | cut -d' ' -f1)"
+          echo "keystore size: $(stat -c%s "${keystore_path}") bytes"
+          echo "alias: [${alias}] (expected: nuviotv-release)"
+          echo "storepass length: ${#storepass}"
+          echo "keypass length: ${#keypass}"
+          echo "storepass == keypass: $([[ "${storepass}" == "${keypass}" ]] && echo yes || echo no)"
+          if keytool -list -v -keystore "${keystore_path}" -storepass "${storepass}" -alias "${alias}" >/dev/null 2>&1; then
+            echo "keytool -list -v with STORE_PASSWORD: OK"
+          else
+            echo "keytool -list -v with STORE_PASSWORD: FAILED"
+          fi
+
           # Trakt sync is optional at runtime (TraktAuthService.hasRequiredCredentials()
           # gates the feature off when the keys are blank), so it isn't required here -
           # this fork doesn't have its own Trakt API app.
