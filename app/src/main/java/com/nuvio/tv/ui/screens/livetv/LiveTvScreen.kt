@@ -47,14 +47,15 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.nuvio.tv.R
-import com.nuvio.tv.domain.model.RaiLiveChannel
+import com.nuvio.tv.domain.model.LiveTvChannel
 import com.nuvio.tv.ui.components.LoadingIndicator
 
 @Composable
 fun LiveTvScreen(
     viewModel: LiveTvViewModel = hiltViewModel(),
     showBuiltInHeader: Boolean = true,
-    onPlaybackResolved: (LiveTvPlaybackRequest) -> Unit
+    onPlaybackResolved: (LiveTvPlaybackRequest) -> Unit,
+    onOpenWebView: (LiveTvWebViewRequest) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -62,6 +63,12 @@ fun LiveTvScreen(
     if (playbackRequest != null) {
         onPlaybackResolved(playbackRequest)
         viewModel.consumePlaybackRequest()
+    }
+
+    val webViewRequest = uiState.webViewRequest
+    if (webViewRequest != null) {
+        onOpenWebView(webViewRequest)
+        viewModel.consumeWebViewRequest()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -123,10 +130,10 @@ fun LiveTvScreen(
                 verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(viewModel.channels, key = { it.slug }) { channel ->
+                items(viewModel.channels, key = { it.key }) { channel ->
                     ChannelTile(
                         channel = channel,
-                        isResolving = uiState.resolvingChannelSlug == channel.slug,
+                        isResolving = uiState.resolvingChannelKey == channel.key,
                         onClick = { viewModel.playChannel(channel) }
                     )
                 }
@@ -137,7 +144,7 @@ fun LiveTvScreen(
 
 @Composable
 private fun ChannelTile(
-    channel: RaiLiveChannel,
+    channel: LiveTvChannel,
     isResolving: Boolean,
     onClick: () -> Unit
 ) {
