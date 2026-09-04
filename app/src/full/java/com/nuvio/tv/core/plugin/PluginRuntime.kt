@@ -513,7 +513,14 @@ class PluginRuntime @Inject constructor() {
     ): String {
         Log.d(TAG, "Fetch: $method $url body=${body.take(200)}")
         return try {
-            val headers = mutableMapOf<String, String>()
+            // HTTP header names are case-insensitive, but scrapers commonly send
+            // lowercase names (e.g. 'content-type', matching the Fetch API's own
+            // Headers normalization). A case-sensitive map made the Content-Type
+            // lookups below silently miss those, defaulting POST/PUT bodies to
+            // the wrong media type and breaking servers that validate it (e.g.
+            // RaiPlay's search API rejecting JSON bodies sent as
+            // application/x-www-form-urlencoded with HTTP 415).
+            val headers = java.util.TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER)
             try {
                 val headersMap = gson.fromJson(headersJson, Map::class.java)
                 headersMap?.forEach { (k, v) ->
