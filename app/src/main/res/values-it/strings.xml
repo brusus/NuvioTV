@@ -1366,11 +1366,18 @@
 <string name="nav_home">Home</string>
 <string name="nav_discover">Scopri</string>
 <string name="nav_search">Cerca</string>
+<string name="nav_live_tv">TV in diretta</string>
 <string name="nav_library">Libreria</string>
 <string name="nav_addons">Addon</string>
 <string name="nav_settings">Impostazioni</string>
 <string name="settings_rounded_ui">Interfaccia arrotondata</string>
 <string name="cd_expand_sidebar">Espandi barra laterale</string>
+
+<!-- LiveTvScreen -->
+<string name="live_tv_title">TV in diretta</string>
+<string name="live_tv_subtitle">Canali Rai, in diretta streaming</string>
+<string name="live_tv_error_provider_not_installed">La TV in diretta richiede il provider RaiPlay - aggiungi prima il repository dei plugin nelle Impostazioni</string>
+<string name="live_tv_error_unavailable">Impossibile avviare questo canale. Accedi con un account RaiPlay gratuito in Impostazioni ▸ Plugin ▸ RaiPlay, poi riprova</string>
 
 <string name="update_checking">Controllo aggiornamenti…</string>
 <string name="update_download_complete">Download completato. Pronto per l\'installazione.</string>

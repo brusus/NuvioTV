@@ -1115,6 +1115,25 @@ fun NuvioNavHost(
             )
         }
 
+        composable(Screen.LiveTv.route) {
+            com.nuvio.tv.ui.screens.livetv.LiveTvScreen(
+                showBuiltInHeader = !hideBuiltInHeaders,
+                onPlaybackResolved = { request ->
+                    navController.navigate(
+                        Screen.Player.createRoute(
+                            streamUrl = request.streamUrl,
+                            title = request.title,
+                            headers = request.headers,
+                            contentType = "channel",
+                            contentName = request.title,
+                            addonName = "RaiPlay",
+                            returnToHomeOnBack = true
+                        )
+                    )
+                }
+            )
+        }
+
         composable(Screen.Library.route) {
             LibraryScreen(
                 showBuiltInHeader = !hideBuiltInHeaders,

@@ -2255,6 +2255,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_discover">Discover</string>
     <string name="nav_search">Search</string>
+    <string name="nav_live_tv">Live TV</string>
     <string name="nav_library">Library</string>
     <string name="nav_addons">Addons</string>
     <string name="nav_movies">Movies</string>
@@ -2263,6 +2264,12 @@
     <string name="action_select">Select</string>
     <string name="settings_rounded_ui">Rounded UI</string>
     <string name="cd_expand_sidebar">Expand sidebar</string>
+
+    <!-- LiveTvScreen -->
+    <string name="live_tv_title">Live TV</string>
+    <string name="live_tv_subtitle">RAI channels, streaming live</string>
+    <string name="live_tv_error_provider_not_installed">Live TV needs the RaiPlay provider - add the plugin repository in Settings first</string>
+    <string name="live_tv_error_unavailable">Couldn\'t start this channel. Log in with a free RaiPlay account in Settings ▸ Plugins ▸ RaiPlay, then try again</string>
 
     <string name="update_checking">Checking for updates…</string>
     <string name="update_waiting_for_stable">You’ll receive the next stable release when it becomes available</string>

@@ -47,6 +47,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -853,6 +854,7 @@ open class MainActivity : ComponentActivity() {
                         buildSet {
                             add(Screen.Home.route)
                             add(Screen.Search.route)
+                            add(Screen.LiveTv.route)
                             add(Screen.Library.route)
                             add(Screen.Settings.route)
                             if (discoverLocation == DiscoverLocation.IN_SIDEBAR) {
@@ -864,12 +866,14 @@ open class MainActivity : ComponentActivity() {
                     val strNavHome = stringResource(R.string.nav_home)
                     val strNavDiscover = stringResource(R.string.nav_discover)
                     val strNavSearch = stringResource(R.string.nav_search)
+                    val strNavLiveTv = stringResource(R.string.nav_live_tv)
                     val strNavLibrary = stringResource(R.string.nav_library)
                     val strNavSettings = stringResource(R.string.nav_settings)
                     val drawerItems = remember(
                         strNavHome,
                         strNavDiscover,
                         strNavSearch,
+                        strNavLiveTv,
                         strNavLibrary,
                         strNavSettings,
                         discoverLocation
@@ -896,6 +900,13 @@ open class MainActivity : ComponentActivity() {
                                     route = Screen.Search.route,
                                     label = strNavSearch,
                                     iconRes = R.raw.sidebar_search
+                                )
+                            )
+                            add(
+                                DrawerItem(
+                                    route = Screen.LiveTv.route,
+                                    label = strNavLiveTv,
+                                    icon = Icons.Default.LiveTv
                                 )
                             )
                             add(
