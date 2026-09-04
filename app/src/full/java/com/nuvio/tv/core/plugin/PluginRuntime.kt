@@ -724,7 +724,15 @@ class PluginRuntime @Inject constructor() {
                     headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
                 }
 
-                var result = __native_fetch(url, method, JSON.stringify(headers), body);
+                // Per the Fetch API, url may be a URL object, not just a string -
+                // scrapers commonly do `fetch(new URL(...))`. The native bridge
+                // takes a plain string, and Kotlin's default toString() on the
+                // opaque JsObject reference (not the JS engine's own URL.toString)
+                // produced garbage like "com.dokar.quickjs.binding.JsObject@..."
+                // instead of the real address, so every such call failed before
+                // any network request was even attempted.
+                var urlString = (url && typeof url.href === 'string') ? url.href : String(url);
+                var result = __native_fetch(urlString, method, JSON.stringify(headers), body);
                 var parsed = JSON.parse(result);
 
                 if (signal && signal.aborted) {
@@ -843,6 +851,13 @@ class PluginRuntime @Inject constructor() {
             }
 
             // URL class
+            // `href` is a computed getter (origin+pathname+search+hash) instead of
+            // a value frozen at construction time. Scrapers universally do
+            // `new URL(base); url.searchParams.set(...); fetch(url)` - with href
+            // as a plain field, that pattern silently fetched the base URL with
+            // no query string at all, since searchParams mutations never touched
+            // it. searchParams.set/append/delete/sort now push the new query
+            // string back into `search` via _onChange so href stays live.
             var URL = function(urlString, base) {
                 var fullUrl = urlString;
                 if (base && !/^https?:\/\//i.test(urlString)) {
@@ -857,7 +872,6 @@ class PluginRuntime @Inject constructor() {
                 }
                 var parsed = __parse_url(fullUrl);
                 var data = JSON.parse(parsed);
-                this.href = fullUrl;
                 this.protocol = data.protocol;
                 this.host = data.host;
                 this.hostname = data.hostname;
@@ -866,9 +880,36 @@ class PluginRuntime @Inject constructor() {
                 this.search = data.search;
                 this.hash = data.hash;
                 this.origin = data.protocol + '//' + data.host;
-                // Build searchParams from search string
+                var self = this;
                 this.searchParams = new URLSearchParams(data.search || '');
+                this.searchParams._onChange = function() {
+                    var qs = self.searchParams.toString();
+                    self.search = qs ? '?' + qs : '';
+                };
             };
+            Object.defineProperty(URL.prototype, 'href', {
+                get: function() {
+                    return this.origin + this.pathname + (this.search || '') + (this.hash || '');
+                },
+                set: function(value) {
+                    var parsed = __parse_url(value);
+                    var data = JSON.parse(parsed);
+                    this.protocol = data.protocol;
+                    this.host = data.host;
+                    this.hostname = data.hostname;
+                    this.port = data.port;
+                    this.pathname = data.pathname;
+                    this.search = data.search;
+                    this.hash = data.hash;
+                    this.origin = data.protocol + '//' + data.host;
+                    var self = this;
+                    this.searchParams = new URLSearchParams(data.search || '');
+                    this.searchParams._onChange = function() {
+                        var qs = self.searchParams.toString();
+                        self.search = qs ? '?' + qs : '';
+                    };
+                }
+            });
             URL.prototype.toString = function() { return this.href; };
 
             // URLSearchParams class
@@ -899,15 +940,18 @@ class PluginRuntime @Inject constructor() {
             };
             URLSearchParams.prototype.set = function(key, value) {
                 this._params[key] = String(value);
+                this._onChange && this._onChange();
             };
             URLSearchParams.prototype.append = function(key, value) {
                 this._params[key] = String(value);
+                this._onChange && this._onChange();
             };
             URLSearchParams.prototype.has = function(key) {
                 return this._params.hasOwnProperty(key);
             };
             URLSearchParams.prototype.delete = function(key) {
                 delete this._params[key];
+                this._onChange && this._onChange();
             };
             URLSearchParams.prototype.keys = function() {
                 return Object.keys(this._params);
@@ -934,6 +978,7 @@ class PluginRuntime @Inject constructor() {
                 var self = this;
                 Object.keys(this._params).sort().forEach(function(k) { sorted[k] = self._params[k]; });
                 this._params = sorted;
+                this._onChange && this._onChange();
             };
 
             // Cheerio implementation
