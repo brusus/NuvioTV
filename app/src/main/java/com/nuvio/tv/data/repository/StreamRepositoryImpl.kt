@@ -367,10 +367,13 @@ class StreamRepositoryImpl @Inject constructor(
         if (!videoId.canRunLocalPlugins()) return null
 
         return PluginRequest(
-            id = if (videoId.startsWith("kitsu:", ignoreCase = true)) {
-                cleanKitsuPluginId(videoId)
-            } else {
-                videoId
+            id = when {
+                videoId.startsWith("kitsu:", ignoreCase = true) -> cleanKitsuPluginId(videoId)
+                // IMDB ids carry season/episode as a Stremio-style suffix
+                // (tt1234567:1:1) that scrapers don't expect in the id itself -
+                // season/episode are already passed separately below.
+                videoId.startsWith("tt", ignoreCase = true) -> videoId.substringBefore(':')
+                else -> videoId
             },
             mediaType = type.lowercase(),
             source = videoId.substringBefore(":").uppercase()
@@ -429,9 +432,18 @@ class StreamRepositoryImpl @Inject constructor(
      * Stream local plugin results - each scraper sends results individually
      */
     private fun String.canRunLocalPlugins(): Boolean {
+        // Every scraper's manifest declares idPrefixes including "tt" and
+        // "anidb:" alongside these three, so they must fall back the same way
+        // when TMDB id resolution fails or is skipped (e.g. TMDB lookup error,
+        // rate limit, or a title TMDB doesn't have) - previously only
+        // kitsu/anilist/mal ids could still reach scrapers in that case, so an
+        // IMDB-sourced video (the most common case) silently queried zero
+        // scrapers and surfaced a misleading "no addon supports this type" error.
         return startsWith("kitsu:", ignoreCase = true) ||
             startsWith("anilist:", ignoreCase = true) ||
-            startsWith("mal:", ignoreCase = true)
+            startsWith("mal:", ignoreCase = true) ||
+            startsWith("anidb:", ignoreCase = true) ||
+            startsWith("tt", ignoreCase = true)
     }
 
     private suspend fun streamLocalPlugins(
