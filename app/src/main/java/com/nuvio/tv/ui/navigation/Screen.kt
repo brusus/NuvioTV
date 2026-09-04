@@ -136,14 +136,6 @@ sealed class Screen(val route: String) {
     data object Search : Screen("search")
     data object Discover : Screen("discover")
     data object LiveTv : Screen("live_tv")
-    data object WebViewPlayer : Screen("webview_player/{url}/{title}") {
-        private fun encode(value: String): String =
-            URLEncoder.encode(value, "UTF-8").replace("+", "%20")
-
-        fun createRoute(url: String, title: String): String {
-            return "webview_player/${encode(url)}/${encode(title)}"
-        }
-    }
     data object Library : Screen("library")
     data object Settings : Screen("settings")
     data object Tracking : Screen("trakt")

@@ -1130,35 +1130,7 @@ fun NuvioNavHost(
                             returnToHomeOnBack = true
                         )
                     )
-                },
-                onOpenWebView = { request ->
-                    com.nuvio.tv.ui.screens.livetv.PendingWebViewRequest.set(request)
-                    navController.navigate(
-                        Screen.WebViewPlayer.createRoute(
-                            url = request.url,
-                            title = request.title
-                        )
-                    )
                 }
-            )
-        }
-
-        composable(
-            route = Screen.WebViewPlayer.route,
-            arguments = listOf(
-                navArgument("url") { type = NavType.StringType },
-                navArgument("title") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
-            val url = java.net.URLDecoder.decode(encodedUrl, "UTF-8")
-            val pending = com.nuvio.tv.ui.screens.livetv.PendingWebViewRequest.consumeAndClear()
-                ?.takeIf { it.url == url }
-            com.nuvio.tv.ui.screens.livetv.WebViewPlayerScreen(
-                url = url,
-                loginEmail = pending?.loginEmail,
-                loginPassword = pending?.loginPassword,
-                onExit = { navController.popBackStack() }
             )
         }
 
