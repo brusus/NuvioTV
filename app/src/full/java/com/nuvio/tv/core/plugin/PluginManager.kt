@@ -291,6 +291,24 @@ class PluginManager @Inject constructor(
     }
     
     /**
+     * Auto-add this fork's own provider repository on first run of a profile, so
+     * playback works out of the box without the user having to find and paste
+     * the repo URL manually. Runs at most once per profile: on success it's
+     * marked seeded and never re-added (so a user who deliberately removes it
+     * later stays removed); on failure (e.g. no network yet at cold boot) it
+     * stays unseeded and is retried on the next app start.
+     */
+    suspend fun seedDefaultRepositoryIfNeeded() {
+        if (dataStore.isDefaultRepositorySeeded()) return
+        val result = addRepository(DEFAULT_REPOSITORY_URL)
+        if (result.isSuccess) {
+            dataStore.markDefaultRepositorySeeded()
+        } else {
+            Log.w(TAG, "seedDefaultRepositoryIfNeeded: failed, will retry next launch", result.exceptionOrNull())
+        }
+    }
+
+    /**
      * Add a new repository from manifest URL.
      * Auto-detects format: tries NuvioTV manifest first, then external repo format.
      */
@@ -1151,5 +1169,7 @@ class PluginManager @Inject constructor(
 
     companion object {
         private const val MAX_PARALLEL_DOWNLOADS = 10
+        private const val DEFAULT_REPOSITORY_URL =
+            "https://raw.githubusercontent.com/brusus/Nuvio-tv-plugins/main/manifest.json"
     }
 }

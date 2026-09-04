@@ -54,6 +54,7 @@ class PluginDataStore @Inject constructor(
     private val pluginsEnabledKey = booleanPreferencesKey("plugins_enabled")
     private val groupStreamsByRepositoryKey = booleanPreferencesKey("group_streams_by_repository")
     private val scraperSettingsKey = stringPreferencesKey("scraper_settings")
+    private val defaultRepositorySeededKey = booleanPreferencesKey("default_repository_seeded")
 
     private val repoListType = Types.newParameterizedType(List::class.java, PluginRepository::class.java)
     private val scraperListType = Types.newParameterizedType(List::class.java, ScraperInfo::class.java)
@@ -172,6 +173,16 @@ class PluginDataStore @Inject constructor(
             if (active != null && !active.isPrimary && active.usesPrimaryPlugins) return
         store().edit { prefs ->
             prefs[pluginsEnabledKey] = enabled
+        }
+    }
+
+    /** Whether the bundled default repository has already been auto-added for this profile. */
+    suspend fun isDefaultRepositorySeeded(): Boolean =
+        store().data.first()[defaultRepositorySeededKey] ?: false
+
+    suspend fun markDefaultRepositorySeeded() {
+        store().edit { prefs ->
+            prefs[defaultRepositorySeededKey] = true
         }
     }
 
